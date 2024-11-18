@@ -206,7 +206,7 @@ class LSGraph {
       // cout << "running integer sort: " << nn << " and mm = " << (m * parlay::log2_up(m)) << " bits = " << bits << endl;
       // parlay::integer_sort_inplace(E_orig, edge_to_long, bits);
       // parlay::internal::integer_sort_inplace(parlay::make_slice(edges), edge_to_long, bits);
-      parlay::stable_integer_sort_inplace(edges, edge_to_long, bits);
+      parlay::stable_integer_sort_inplace(edges, edge_to_long);
       // parlay::integer_sort_inplace(edges);
     } else {
       // cout << "running sample sort" << endl;

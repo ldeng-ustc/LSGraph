@@ -175,7 +175,9 @@ void run_algorithm(commandLine& P) {
   uint64_t num_edges;
   auto filename = P.getOptionValue("-f", "none");
 	//pair_uint *edges = get_edges_from_file(filename.c_str(), 1,true, &num_edges, &num_nodes);
-	pair_uint *edges = get_edges_from_file_adj_sym(filename.c_str(), &num_edges, &num_nodes);
+	//pair_uint *edges = get_edges_from_file_adj_sym(filename.c_str(), &num_edges, &num_nodes);
+  pair_uint *edges = get_edges_from_file(filename.c_str(), 1, false, &num_edges, &num_nodes);
+  //pair_uint *edges = get_edges_from_binary64_file(filename.c_str(), false, &num_edges, &num_nodes);
 
 	LSGraph graph(num_nodes);
     std::vector<uint32_t> new_srcs(num_edges);
