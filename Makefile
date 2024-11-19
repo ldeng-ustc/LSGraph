@@ -1,4 +1,4 @@
-TARGETS= LSGraph
+TARGETS= LSGraph LSGraph-Bench
 
 ifdef D
 	DEBUG=-g -DDEBUG_MODE
@@ -20,9 +20,15 @@ ifdef P
 endif
 
 # sudo apt install libstdc++-8-dev
-CXX = clang++ -std=c++17
-CC = clang -std=gnu11
-LD= clang++ -std=c++17
+CXX = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
+CC = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang -std=gnu11
+LD= /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
+
+# 严重的，涉及多个文件的头文件名不一致，无法使用
+# CXX = /home/ldeng/open-source/OpenCilk/build/bin/clang++ -std=c++17
+# CC = /home/ldeng/open-source/OpenCilk/build/bin/clang -std=gnu11
+# LD= /home/ldeng/open-source/OpenCilk/build/bin/clang++ -std=c++17
+
 
 LOC_INCLUDE=include
 LOC_LIB=lib
@@ -57,13 +63,20 @@ ifeq ($(OPENMP),1)
 endif
 
 LDFLAGS +="-Wl,-rpath,lib/"
-all: LSGraph
+all: LSGraph LSGraph-Bench
 LSGraph:							$(OBJDIR)/LSGraph.o \
 												$(OBJDIR)/util.o
 # dependencies between .o files and .cc (or .c) files
 $(OBJDIR)/LSGraph.o: 					$(LOC_SRC)/LSGraph.cc \
 																	$(LOC_INCLUDE)/graph.h \
 																	$(LOC_INCLUDE)/util.h
+
+
+LSGraph-Bench: $(OBJDIR)/LSGraph-Bench.o $(OBJDIR)/util.o
+
+$(OBJDIR)/LSGraph-Bench.o: $(LOC_SRC)/LSGraph-Bench.cc $(LOC_INCLUDE)/graph.h $(LOC_INCLUDE)/util.h
+
+
 #
 # generic build rules
 #

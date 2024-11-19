@@ -18,6 +18,8 @@
 #include <vector>
 #include <iostream>
 
+#include <sys/time.h>
+
 #include <parlay/io.h>
 #include <parlay/primitives.h>
 #include <parlay/random.h>

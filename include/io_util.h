@@ -269,6 +269,7 @@ pair_uint * get_edges_from_file(const char *filename, int zero_indexed, bool add
   }
   *edge_count = line_count;
   printf("getting edges from file %s\n", filename);
+  printf("edge count %lu\n", line_count);
   rewind(fp);
   pair_uint *edges = (pair_uint *) malloc(line_count * sizeof(pair_uint));
   uint32_t num_nodes = 0;
@@ -328,5 +329,37 @@ std::map<upair, uint32_t> get_unique_edges_from_file(const char *filename) {
   fclose(fp);
     // return 0;
   free(line);
+  return edges;
+}
+
+pair_uint * get_edges_from_binary64_file(const char *filename, bool add_both_directions, uint64_t *edge_count, uint32_t *node_count) {
+  FILE *fp;
+  fp = fopen(filename, "rb");
+  fseek(fp, 0, SEEK_END);
+  size_t file_size = ftell(fp);
+  rewind(fp);
+
+  uint64_t line_count = file_size / (2 * sizeof(uint64_t));
+  if (add_both_directions) {
+    line_count *= 2;
+  }
+
+  *edge_count = line_count;
+  pair_uint *edges = (pair_uint *) malloc(line_count * sizeof(pair_uint));
+  uint32_t num_nodes = 0;
+  uint64_t index = 0;
+  uint64_t e[2] = {0, 0};
+  while (fread(e, sizeof(uint64_t), 2, fp) == 2) {
+    uint32_t src = e[0];
+    uint32_t dest = e[1];
+    num_nodes = std::max(num_nodes, src + 1);
+    num_nodes = std::max(num_nodes, dest + 1);
+    edges[index++] = {src, dest};
+    if (add_both_directions) {
+      edges[index++] = {dest, src};
+    }
+  }
+  fclose(fp);
+  *node_count = num_nodes;
   return edges;
 }
