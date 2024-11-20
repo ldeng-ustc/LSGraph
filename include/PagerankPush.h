@@ -84,29 +84,17 @@ template<typename T, class Graph>
 struct PR_Push_Vertex {
   T *p_next;
   T *dset;
+  T *p_curr;
   Graph& G;
 
-  PR_Push_Vertex(T* _p_next, T* _dset, Graph& _G) : p_next(_p_next), dset(_dset), G(_G) {}
+  PR_Push_Vertex(T* _p_next, T* _dset, T* _p_curr, Graph& _G) : p_next(_p_next), dset(_dset), p_curr(_p_curr), G(_G) {}
 
   inline bool operator () (uint32_t i) {
     p_next[i] = (0.15 + 0.85 * p_next[i]) * dset[i];
+    p_curr[i] = 0.0;
     return 1;
   }
 };
-
-
-template<typename T>
-struct PR_Push_Vertex_Reset {
-  T* p;
-  PR_Push_Vertex_Reset(T* _p) :
-    p(_p) {}
-  inline bool operator () (uint32_t i) {
-    p[i] = 0.0;
-    return 1;
-  }
-};
-
-
 
 template<typename T, class Graph>
 T* PR_Push_S(Graph& G, long maxIters) {
@@ -132,8 +120,8 @@ T* PR_Push_S(Graph& G, long maxIters) {
   printf("max iters %lu\n", maxIters);
   while(iter++ < maxIters) {
     edgeMap(G, Frontier, PR_Push_F(p_curr, p_next, G), false, 0);
-    vertexMap(Frontier,PR_Push_Vertex(p_next, dset, G), false);
-    vertexMap(Frontier,PR_Push_Vertex_Reset(p_next), false);
+    vertexMap(Frontier,PR_Push_Vertex(p_next, dset, p_curr, G), false);
+    // vertexMap(Frontier,PR_Push_Vertex_Reset(p_next), false);
     std::swap(p_curr,p_next);
   }
 
