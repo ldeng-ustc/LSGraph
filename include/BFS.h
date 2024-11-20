@@ -95,3 +95,54 @@ int32_t* BFS_with_edge_map(Graph &G, uint32_t src) {
 #endif
   return Parents;
 }
+
+
+template <class Graph>
+int32_t* BFS_directed_with_edge_map(Graph &G, uint32_t src) {
+  long start = src;
+  long n = G.get_num_vertices();
+  //creates Parents array, initialized to all -1, except for start
+  int32_t* Parents = (int32_t *) malloc(n * sizeof(uint32_t));
+  parallel_for(long i=0;i<n;i++) Parents[i] = -1;
+  Parents[start] = start;
+  VertexSubset frontier = VertexSubset(start, n); //creates initial frontier
+  
+  size_t level = 0;
+  while(frontier.not_empty()){ //loop until frontier is empty
+    auto st = std::chrono::high_resolution_clock::now();
+    // sparse only, normal directed graph
+    VertexSubset next_frontier = edgeMap(G, frontier, BFS_F(Parents), true, 0);
+    frontier.del();
+    frontier = next_frontier;
+    level++;
+    auto ed = std::chrono::high_resolution_clock::now();
+    double dur = std::chrono::duration<double>(ed - st).count();
+    printf("Level = %lu, Frontier Count = %lu, Time = %.2fs\n", level, frontier.get_n(), dur);
+  }
+  frontier.del();
+
+#if VERIFY
+  std::vector<uint32_t> depths(n, UINT32_MAX);
+  for (uint32_t j = 0; j < n; j++) {
+    uint32_t current_depth = 0;
+    int32_t current_parent = j;
+    if (Parents[j] < 0) {
+      continue;
+    }
+    while (current_parent != Parents[current_parent]) {
+      current_depth += 1;
+      current_parent = Parents[current_parent];
+    }
+    depths[j] = current_depth;
+  }
+  
+  // write out to file
+  std::ofstream myfile;
+  myfile.open ("bfs.out");
+  for (int i = 0; i < n; i++) {
+    myfile << depths[i] << "\n";
+  }
+  myfile.close();
+#endif
+  return Parents;
+}

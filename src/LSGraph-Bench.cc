@@ -24,7 +24,7 @@
 #include "bench_utils.h"
 
 #include "BFS.h"
-#include "Pagerank.h"
+#include "PagerankPush.h"
 #include "Components.h"
 #include "BC.h"
 #include "TC.h"
@@ -74,7 +74,7 @@ double test_pr(G& GA, commandLine& P) {
 
   // with edge map
   gettimeofday(&start, &tzp);
-  auto pr_edge_map = PR_S<double>(GA, maxiters); 
+  auto pr_edge_map = PR_Push_S<float>(GA, maxiters); 
   gettimeofday(&end, &tzp);
   free(pr_edge_map);
   PRINT("PR finished");
@@ -152,7 +152,7 @@ double test_bfs(G& GA, commandLine& P, int trial) {
   std::cout << "Running BFS from source = " << src << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
-  auto bfs_edge_map = BFS_with_edge_map(GA, src);
+  auto bfs_edge_map = BFS_directed_with_edge_map(GA, src);
   gettimeofday(&end, &tzp);
   free(bfs_edge_map);
   return cal_time_elapsed(&start, &end);
@@ -205,7 +205,8 @@ void run_algorithm(commandLine& P) {
   auto ts_ingest = std::chrono::high_resolution_clock::now();
 
   // Run test
-  execute(graph, P, "BFS", 1);
+  std::string testname = P.getOptionValue("-t", "BFS");
+  execute(graph, P, testname, 1);
   auto ts_algo = std::chrono::high_resolution_clock::now();
 
   // [TODO]
