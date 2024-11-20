@@ -37,9 +37,12 @@ OBJDIR=obj
 SER=ser
 CILK=1
 
-CXXFLAGS += -mcx16 -Wall $(DEBUG) -g $(PROFILE) $(OPT) $(ARCH) -DOPENMP=$(OPENMP) -DCILK=$(CILK) -DPARLAY_OPENCILK -m64 -I. -I$(LOC_INCLUDE)
+CXXFLAGS += -mcx16 $(DEBUG) -g $(PROFILE) $(OPT) $(ARCH) -DOPENMP=$(OPENMP) -DCILK=$(CILK) -DPARLAY_OPENCILK -m64 -I. -I$(LOC_INCLUDE)
+# CXXFLAGS += -Wall
+CXXFLAGS += -Wno-format -Wno-return-type -Wno-source-uses-cilk-plus -Wno-macro-redefined -Wno-c++20-extensions -Wno-deprecated-declarations
+CXXFLAGS += -Wno-constant-conversion
 
-CFLAGS += -mcx16 -Wall $(DEBUG) $(PROFILE) $(OPT) $(ARCH) -DOPENMP=$(OPENMP) -DCILK=$(CILK) -DPARLAY_OPENCILK -m64 -I. -I$(LOC_INCLUDE)
+CFLAGS += -mcx16  $(DEBUG) $(PROFILE) $(OPT) $(ARCH) -DOPENMP=$(OPENMP) -DCILK=$(CILK) -DPARLAY_OPENCILK -m64 -I. -I$(LOC_INCLUDE)
 
 LDFLAGS += $(DEBUG) $(PROFILE) $(OPT) -L$(LOC_LIB) -lm -lpthread -lssl -lcrypto -ldl
 

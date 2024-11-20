@@ -47,12 +47,15 @@ VertexSubset EdgeMapDense(Graph &G, VertexSubset &vs, F f, bool output) {
         }
     }
   } else {
+      // std::atomic<int> k = 0;
 			parallel_for(uint64_t i_ = 0; i_ < G.get_num_vertices(); i_+=512) {
 				uint64_t end = std::min(i_+512, (uint64_t) G.get_num_vertices());
 				for (uint64_t i = i_; i < end; i++) {
 			//for(uint64_t i = 0; i < G.get_num_vertices(); i++) {
           if (f.cond(i) == 1) {
-            //printf("processing row %lu\n", i);
+            // if(k.fetch_add(1, std::memory_order_seq_cst)<4) {
+            //   printf("processing row %lu\n", i);
+            // }
             G.map_dense_vs_not_all(f, vs, output_vs, i, output);
           }
 				}
@@ -66,9 +69,11 @@ template <class F, class Graph>
 VertexSubset edgeMap(Graph &G, VertexSubset &vs, F f, bool output = true, uint32_t threshold = 20) {
   //vs.print();
   //printf("%u, %u, %u\n", G.rows, threshold, vs.get_n());
-  if (G.get_num_vertices()/threshold <= vs.get_n()) {
+  if (G.get_num_vertices() <= vs.get_n() * (uint64_t)threshold) {
+    printf("dense\n");
     return EdgeMapDense(G, vs, f, output);
   } else {
+    printf("sparse\n");
     return EdgeMapSparse(G, vs, f, output);
   }
 }

@@ -28,6 +28,9 @@ struct BFS_F {
   int32_t* Parents;
   BFS_F(int32_t* _Parents) : Parents(_Parents) {}
   inline bool update (uint32_t s, uint32_t d) { //Update
+    // thread_local int k = 0;
+    // if(k++ < 4)
+    //   printf("Parents[%d] = %d\n", d, s);
     if(Parents[d] == -1) { Parents[d] = s; return 1; }
     else return 0;
   }
@@ -47,13 +50,22 @@ int32_t* BFS_with_edge_map(Graph &G, uint32_t src) {
   parallel_for(long i=0;i<n;i++) Parents[i] = -1;
   Parents[start] = start;
   VertexSubset frontier = VertexSubset(start, n); //creates initial frontier
+  
+  size_t level = 0;
   while(frontier.not_empty()){ //loop until frontier is empty
-    // printf("frontier size  %lu\n", frontier.get_n());
-    // dense only
-    // edgeMap(G, frontier, BFS_F(Parents), true, INT_MAX);    
-    VertexSubset next_frontier = edgeMap(G, frontier, BFS_F(Parents), true); 
+    auto st = std::chrono::high_resolution_clock::now();
+    // sparse only, normal directed graph
+    VertexSubset next_frontier = edgeMap(G, frontier, BFS_F(Parents), true, 0);
+    // dense only, only for in-graph (reverse graph)
+    // VertexSubset next_frontier = edgeMap(G, frontier, BFS_F(Parents), true, INT_MAX);    
+    // dynamic, incorrect within directed graph, only for undirected graphs
+    // VertexSubset next_frontier = edgeMap(G, frontier, BFS_F(Parents), true); 
     frontier.del();
     frontier = next_frontier;
+    level++;
+    auto ed = std::chrono::high_resolution_clock::now();
+    double dur = std::chrono::duration<double>(ed - st).count();
+    printf("Level = %lu, Frontier Count = %lu, Time = %.2fs\n", level, frontier.get_n(), dur);
   }
   frontier.del();
 

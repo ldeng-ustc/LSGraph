@@ -43,7 +43,7 @@ public:
     else if (is_sparse) return queue->size() > 0;
     else return ba->not_empty();
   }
-  void print() {
+  void print(int limit = INT_MAX) {
     printf("is_sparse = %d\n", is_sparse);
     if (all) {
       printf("{0,...,%lu}\n", max_el);
@@ -57,7 +57,8 @@ public:
       printf("}\n");
     } else {
       printf("{");
-      for (uint32_t i = 0; i < max_el; i++) {
+      uint32_t el = max_el < limit ? max_el : limit;
+      for (uint32_t i = 0; i < el; i++) {
         if (ba->get(i)) {
           printf("%d, ", i);
         }
@@ -89,6 +90,8 @@ public:
       const uint32_t start = queue->shared_out_start;
       const uint32_t end = queue->shared_out_end;
       parallel_for(uint32_t i = start; i < end; i++) {
+        // if(i < start + 16)
+        //   printf("queue->shared[i] = %d\n", queue->shared[i]);
         f.update(queue->shared[i]);
       }
     } else {

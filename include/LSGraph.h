@@ -1136,6 +1136,8 @@ unlock:
 
   template <class F, typename VS>
     void LSGraph::map_dense_vs_not_all(F &f, VS &vs, VS &output_vs, uint32_t self_index, bool output) {
+      // printf("map_dense_vs_not_all\n");
+      // vs.print(10);
       uint32_t degree = vertices[self_index].degree;
       uint32_t local_idx = 0;
       if (degree <= NUM_IN_PLACE_NEIGHBORS) {
