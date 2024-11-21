@@ -65,7 +65,7 @@ class LSGraph {
 			int remove_edge(const vertex s, const vertex d);
 			void bulk_load(vertex *srcs,vertex *dests, uint32_t edge_count);
 			void add_edge_batch_1for(vertex *srcs,vertex *dests, uint32_t edge_count);
-			void add_edge_batch_sort(parlay::sequence<std::tuple<uint32_t, uint32_t>> &updates, uint32_t edge_count, size_t nn);
+			void add_edge_batch_sort(parlay::sequence<std::tuple<uint32_t, uint32_t>> &updates, uint32_t edge_count, size_t nn, size_t thread_div=1);
       // check for the existence of the edge
       uint32_t is_edge(const vertex s, const vertex d);
 
@@ -217,12 +217,12 @@ class LSGraph {
     }
   }
 
-  void LSGraph::add_edge_batch_sort(parlay::sequence<std::tuple<uint32_t, uint32_t>> &updates, uint32_t edge_count, size_t nn) {
+  void LSGraph::add_edge_batch_sort(parlay::sequence<std::tuple<uint32_t, uint32_t>> &updates, uint32_t edge_count, size_t nn, size_t thread_div) {
     // struct timeval start, end;
     // struct timezone tzp;
     parlay::internal::timer t("Time");
 
-    uint32_t threads = getWorkers();
+    uint32_t threads = getWorkers() / thread_div;
     uint32_t* oparts = new uint32_t[edge_count+1];
     uint32_t* parts = new uint32_t[edge_count+1];
     uint32_t* pnum = new uint32_t[threads];

@@ -39,6 +39,44 @@ using namespace graphstore;
 
 #include	<stdlib.h>
 
+
+struct LSGraphTwoWay {
+  LSGraph gin_;
+  LSGraph gout_;
+
+  LSGraphTwoWay(uint32_t size) : gin_(size), gout_(size) {}
+
+  void add_edge_batch_sort(parlay::sequence<std::tuple<uint32_t, uint32_t>> &updates, uint32_t edge_count, size_t nn) {
+    using Sequence = parlay::sequence<std::tuple<uint32_t, uint32_t>>;
+    Sequence& batch = updates;
+    
+    // 1. nested for, cilk will shcedule the both loops
+    // Sequence batch_in = batch; // copy, batchs will be sorted concurrently, so must copy
+    // parallel_for_1(size_t j=0; j<2; j++) {
+    //   if(j == 0) {
+    //     graph.add_edge_batch_sort(batch, batch.size(), nn, 2);
+    //   } else {
+    //     graph_in.add_edge_batch_sort(batch_in, batch_in.size(), nn, 2);
+    //   }
+    // }
+
+    // 2. serial, every graph use all threads, no need to copy
+    // Faster, use 2.
+    gin_.add_edge_batch_sort(batch, batch.size(), nn);
+    gout_.add_edge_batch_sort(batch, batch.size(), nn);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
 std::string test_name[] = {
     "BFS",
     "PR",
@@ -172,7 +210,7 @@ void run_algorithm(commandLine& P) {
   // Create updates
   size_t batch_size = P.getOptionLongValue("-bs", 5);
   size_t batchs = (num_edges + batch_size - 1) / batch_size;
-  size_t info_batch = std::max((size_t)1, 10000000u / batch_size);
+  size_t info_batch = std::max((size_t)1, 20000000u / batch_size);
 
   using Sequence = parlay::sequence<std::tuple<uint32_t, uint32_t>>;
   std::vector<Sequence> batch_data;
@@ -190,11 +228,14 @@ void run_algorithm(commandLine& P) {
   auto ts_transform = std::chrono::high_resolution_clock::now();
 
   // Batch ingest
-  LSGraph graph(num_nodes);
+  LSGraphTwoWay tgraph(num_nodes);
+  LSGraph& graph = tgraph.gout_;
 
   for(size_t i=0; i<batchs; i++) {
     auto& batch = batch_data[i];
-    graph.add_edge_batch_sort(batch, batch.size(), num_nodes);
+
+    tgraph.add_edge_batch_sort(batch, batch.size(), num_nodes);
+
     if(i % info_batch == 0) {
       auto ts = std::chrono::high_resolution_clock::now();
       auto t = std::chrono::duration<double>(ts - ts_transform).count();
