@@ -111,9 +111,9 @@ uint32_t *CC(Graph &G) {
   free(prevIDs);
   
 #if VERIFY
-  std::set<uint32_t> components_set;
+  std::unordered_map<uint32_t, uint32_t> components_set;
   for (uint32_t i = 0; i < n; i++) {
-    components_set.insert(IDs[i]);
+    components_set[IDs[i]] += 1;
   }
   printf("number of components is %lu\n", components_set.size());
 #endif

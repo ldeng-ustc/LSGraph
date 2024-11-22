@@ -62,19 +62,29 @@ struct LSGraphTwoWay {
 
     // 2. serial, every graph use all threads, no need to copy
     // Faster, use 2.
-    gin_.add_edge_batch_sort(batch, batch.size(), nn);
     gout_.add_edge_batch_sort(batch, batch.size(), nn);
+    // reverse batch
+    parallel_for (size_t i = 0; i < batch.size(); ++i) {
+      auto [s, d] = batch[i];
+      batch[i] = {d, s};
+    }
+    gin_.add_edge_batch_sort(batch, batch.size(), nn);
+
   }
+
+  size_t get_num_vertices() {
+    return gin_.get_num_vertices();
+  }
+
+  LSGraph& in() {
+    return gin_;
+  }
+
+  LSGraph& out() {
+    return gout_;
+  }
+
 };
-
-
-
-
-
-
-
-
-
 
 
 std::string test_name[] = {
@@ -190,7 +200,7 @@ double test_bfs(G& GA, commandLine& P, int trial) {
   std::cout << "Running BFS from source = " << src << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
-  auto bfs_edge_map = BFS_directed_with_edge_map(GA, src);
+  auto bfs_edge_map = BFS_xpgraph(GA, src);
   gettimeofday(&end, &tzp);
   free(bfs_edge_map);
   return cal_time_elapsed(&start, &end);
@@ -247,10 +257,9 @@ void run_algorithm(commandLine& P) {
 
   // Run test
   std::string testname = P.getOptionValue("-t", "BFS");
-  execute(graph, P, testname, 1);
+  // execute(graph, P, testname, 1);
+  test_bfs(tgraph, P, 1);
   auto ts_algo = std::chrono::high_resolution_clock::now();
-
-  // [TODO]
 
   double t_load = std::chrono::duration<double>(ts_load - ts_begin).count();
   double t_transfrom = std::chrono::duration<double>(ts_transform - ts_load).count();

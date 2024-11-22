@@ -1,3 +1,4 @@
+#include <chrono>
 #include "Map.cpp"
 // This code is part of the project "Ligra: A Lightweight Graph Processing
 // Framework for Shared Memory", presented at Principles and Practice of 
@@ -145,4 +146,175 @@ int32_t* BFS_directed_with_edge_map(Graph &G, uint32_t src) {
   myfile.close();
 #endif
   return Parents;
+}
+
+// template <class TGraph>
+// int32_t* BFS_with_edge_map_two_way(TGraph &G, uint32_t src) {
+//   long start = src;
+//   long n = G.get_num_vertices();
+//   //creates Parents array, initialized to all -1, except for start
+//   int32_t* Parents = (int32_t *) malloc(n * sizeof(uint32_t));
+//   parallel_for(long i=0;i<n;i++) Parents[i] = -1;
+//   Parents[start] = start;
+//   VertexSubset frontier = VertexSubset(start, n); //creates initial frontier
+
+//   const uint64_t threshold = 20;
+  
+//   size_t level = 0;
+//   while(frontier.not_empty()){ //loop until frontier is empty
+//     auto st = std::chrono::high_resolution_clock::now();
+
+//     bool top_down;
+//     VertexSubset next_frontier;
+//     if (G.get_num_vertices() <= frontier.get_n() * threshold) {
+//       top_down = false;
+//       next_frontier = EdgeMapDense(G.in(), frontier, BFS_F(Parents), true);
+//       // next_frontier = EdgeMapSparse(G.in(), frontier, BFS_F(Parents), true);
+//     } else {
+//       top_down = true;
+//       next_frontier = EdgeMapDense(G.out(), frontier, BFS_F(Parents), true);  // both directions use dense, keep consistent with XPGraph's algo
+//       // next_frontier = EdgeMapSparse(G.out(), frontier, BFS_F(Parents), true);
+//     }
+
+//     frontier.del();
+//     frontier = next_frontier;
+//     level++;
+//     auto ed = std::chrono::high_resolution_clock::now();
+//     double dur = std::chrono::duration<double>(ed - st).count();
+//     printf("Top down = %d, Level = %lu, Frontier Count = %lu, Time = %.2fs\n", top_down, level, frontier.get_n(), dur);
+//   }
+//   frontier.del();
+//   return Parents;
+// }
+
+
+struct BFS_TopDown_F {
+  int32_t* levels;
+  int32_t& cur_level;
+  int64_t& frontier;
+  int32_t thread_frontier[1024];
+
+  BFS_TopDown_F(int32_t* levels, int32_t& cur, int64_t& front) : levels(levels), cur_level(cur), frontier(front) {
+    memset(thread_frontier, 0, sizeof(thread_frontier));
+  }
+
+  inline bool update(uint32_t d, uint32_t s) {   // it's reverse, when use dense in out-graph
+    // if(cur_level == 1) {
+    //     printf("%u --> %u\n", s, d);
+    // }
+    if(levels[d] == 0) {
+      levels[d] = cur_level + 1;
+      // frontier++;
+      thread_frontier[getWorkerNum()] ++;
+      return 1;
+    }
+    return 0;
+  }
+
+  inline bool updateAtomic (uint32_t d, uint32_t s){
+    printf("Never reach here\n");
+    exit(1);
+    return false;
+  }
+
+  //cond function checks if vertex has been visited yet
+  inline bool cond(uint32_t s) {
+    return levels[s] == cur_level;
+  }
+
+  inline void reduction() {
+    for (int i = 0; i < getWorkers(); i++) {
+      frontier += thread_frontier[i];
+      thread_frontier[i] = 0;
+    }
+  }
+};
+
+struct BFS_DownTop_F {
+  int32_t* levels;
+  int32_t& cur_level;
+  int64_t& frontier;
+  int32_t thread_frontier[1024];
+
+  BFS_DownTop_F(int32_t* levels, int32_t& cur, int64_t& front) : levels(levels), cur_level(cur), frontier(front) {
+    memset(thread_frontier, 0, sizeof(thread_frontier));
+  }
+
+  inline bool update (uint32_t s, uint32_t d) { // pull
+    if (levels[s] == cur_level) {
+      levels[d] = cur_level + 1;
+      thread_frontier[getWorkerNum()] ++;
+      return 1;
+    }
+    return 0;
+  }
+
+  inline bool updateAtomic (uint32_t s, uint32_t d){ // push
+    printf("Never reach here\n");
+    exit(1);
+    return false;
+  }
+
+  //cond function checks if vertex has been visited yet
+  inline bool cond(uint32_t d) {
+    return levels[d] == 0;
+  }
+
+  inline void reduction() {
+    for (int i = 0; i < getWorkers(); i++) {
+      frontier += thread_frontier[i];
+      thread_frontier[i] = 0;
+    }
+  }
+
+};
+
+
+
+template <class TGraph>
+int32_t* BFS_xpgraph(TGraph &G, uint32_t root) {
+    int level = 1;
+    int64_t frontier = 0;
+    size_t v_count = G.get_num_vertices();
+
+    auto levels = new int32_t[v_count];
+    std::fill(levels, levels + v_count, 0);
+
+    VertexSubset all = VertexSubset(0, v_count, true);
+    BFS_TopDown_F topdown_func = BFS_TopDown_F(levels, level, frontier);
+    BFS_DownTop_F downtop_func = BFS_DownTop_F(levels, level, frontier);
+
+    levels[root] = level;
+    int	top_down = 1;
+    do {
+        frontier = 0;
+        auto st = std::chrono::high_resolution_clock::now();
+
+        if (top_down) {
+            EdgeMapDense<BFS_TopDown_F&>(G.out(), all, topdown_func, false);
+            topdown_func.reduction();
+        } else { //bottom up
+            EdgeMapDense<BFS_DownTop_F&>(G.in(), all, downtop_func, false);
+            downtop_func.reduction();
+        }
+
+        auto ed = std::chrono::high_resolution_clock::now();
+        double level_time = std::chrono::duration<double>(ed - st).count();
+        printf("Top down = %d, Level = %u, Frontier Count = %d, Time = %.2fs\n", top_down, level, frontier, level_time);
+
+        //Point is to simulate bottom up bfs, and measure the trade-off    
+        if (frontier >= 0.002 * v_count) { // same as GraphOne, XPGraph
+        // if (20ull * frontier >= v_count) { // better
+            top_down = false;
+        } else {
+            top_down = true;
+        }
+        level ++;
+
+        // if(level == 8) {
+        //     break;
+        // }
+    } while (frontier);
+
+  return levels;
 }
