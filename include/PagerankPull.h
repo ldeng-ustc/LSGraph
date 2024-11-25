@@ -112,3 +112,9 @@ void PrintScores(T* scores, int64_t N) {
     printf("Score[%ld] = %.9f (Max)\n", idx, max_score);
 
 }
+
+
+template<class TGraph, typename T=float>
+T* PR_GAPBS_S(TGraph& G, int max_iters, double epsilon=0) {
+    return PR_Pull_S<TGraph, T>(G, max_iters, epsilon);
+}

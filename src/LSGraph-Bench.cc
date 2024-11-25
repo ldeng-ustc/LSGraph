@@ -26,7 +26,7 @@
 #include "BFS.h"
 #include "PagerankPush.h"
 #include "PagerankPull.h"
-#include "Components.h"
+#include "CC.h"
 #include "BC.h"
 #include "TC.h"
 #include "io_util.h"
@@ -124,7 +124,8 @@ double test_pr(G& GA, commandLine& P) {
   // with edge map
   gettimeofday(&start, &tzp);
   // auto pr_edge_map = PR_Push_S<float>(GA, maxiters); 
-  auto pr_edge_map = PR_Pull_S(GA, maxiters);
+  // auto pr_edge_map = PR_Pull_S(GA, maxiters);
+  auto pr_edge_map = PR_GAPBS_S(GA, maxiters);
   gettimeofday(&end, &tzp);
   PrintScores(pr_edge_map, GA.get_num_vertices());
   free(pr_edge_map);
@@ -139,8 +140,10 @@ double test_cc(G& GA, commandLine& P) {
   std::cout << "Running CC" << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
-  auto cc_result = CC(GA);
+  // auto cc_result = CC(GA);
+  auto cc_result = CC_GAPBS_S(GA, true, 2);
   gettimeofday(&end, &tzp);
+  PrintCompStats(cc_result, GA.get_num_vertices());
   free(cc_result);
   PRINT("CC finished");
   return cal_time_elapsed(&start, &end);
@@ -209,6 +212,8 @@ double test_bfs(G& GA, commandLine& P, int trial) {
   return cal_time_elapsed(&start, &end);
 }
 
+#define EXPOUT "[EXPOUT]"
+
 void run_algorithm(commandLine& P) {
 	uint32_t num_nodes;
   uint64_t num_edges;
@@ -242,7 +247,6 @@ void run_algorithm(commandLine& P) {
 
   // Batch ingest
   LSGraphTwoWay tgraph(num_nodes);
-  LSGraph& graph = tgraph.gout_;
 
   for(size_t i=0; i<batchs; i++) {
     auto& batch = batch_data[i];
@@ -259,24 +263,23 @@ void run_algorithm(commandLine& P) {
   auto ts_ingest = std::chrono::high_resolution_clock::now();
 
   // Run test
-  std::string testname = P.getOptionValue("-t", "BFS");
-  // execute(graph, P, testname, 1);
   double t_bfs = test_bfs(tgraph, P, 1);
   double t_pr = test_pr(tgraph, P);
-  //auto ts_algo = std::chrono::high_resolution_clock::now();
+  double t_cc = test_cc(tgraph, P);
 
   double t_load = std::chrono::duration<double>(ts_load - ts_begin).count();
   double t_transfrom = std::chrono::duration<double>(ts_transform - ts_load).count();
   double t_ingest = std::chrono::duration<double>(ts_ingest - ts_transform).count();
-  //double t_algo = std::chrono::duration<double>(ts_algo - ts_ingest).count();
 
-  printf("Load time: %.4f\n", t_load);
-  printf("Transform time: %.4f\n", t_transfrom);
-  printf("Ingest time: %.4f\n", t_ingest);
-  //printf("Algorithm time: %.4f\n", t_algo);
+  printf(EXPOUT "Datset: %s\n", filename.c_str());
+  printf(EXPOUT "Vertex count: %d\n", num_nodes);
+  printf(EXPOUT "Load: %.4f\n", t_load);
+  printf("\tTransform time: %.4f\n", t_transfrom);
+  printf(EXPOUT "Ingest: %.4f\n", t_ingest);
 
-  printf("BFS time: %.4f\n", t_bfs);
-  printf("PR time: %.4f\n", t_pr);
+  printf(EXPOUT "BFS: %.4f\n", t_bfs);
+  printf(EXPOUT "PR: %.4f\n", t_pr);
+  printf(EXPOUT "CC: %.4f\n", t_cc);
 
   double bw_ingest = num_edges / t_ingest / 1e6;
   printf("Ingest bandwidth: %.4fM Edges/s\n", bw_ingest);
