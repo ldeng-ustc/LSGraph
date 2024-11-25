@@ -25,6 +25,7 @@
 
 #include "BFS.h"
 #include "PagerankPush.h"
+#include "PagerankPull.h"
 #include "Components.h"
 #include "BC.h"
 #include "TC.h"
@@ -98,7 +99,7 @@ std::string test_name[] = {
 template <class Graph>
 double execute(Graph& G, commandLine& P, std::string testname, int i) {
   if (testname == "BFS") {
-    return test_bfs(G, P,i );
+    return test_bfs(G, P, i);
   } else if (testname == "PR") {
     return test_pr(G, P);
   } else if (testname == "CC") {
@@ -122,8 +123,10 @@ double test_pr(G& GA, commandLine& P) {
 
   // with edge map
   gettimeofday(&start, &tzp);
-  auto pr_edge_map = PR_Push_S<float>(GA, maxiters); 
+  // auto pr_edge_map = PR_Push_S<float>(GA, maxiters); 
+  auto pr_edge_map = PR_Pull_S(GA, maxiters);
   gettimeofday(&end, &tzp);
+  PrintScores(pr_edge_map, GA.get_num_vertices());
   free(pr_edge_map);
   PRINT("PR finished");
   return cal_time_elapsed(&start, &end);
@@ -258,18 +261,22 @@ void run_algorithm(commandLine& P) {
   // Run test
   std::string testname = P.getOptionValue("-t", "BFS");
   // execute(graph, P, testname, 1);
-  test_bfs(tgraph, P, 1);
-  auto ts_algo = std::chrono::high_resolution_clock::now();
+  double t_bfs = test_bfs(tgraph, P, 1);
+  double t_pr = test_pr(tgraph, P);
+  //auto ts_algo = std::chrono::high_resolution_clock::now();
 
   double t_load = std::chrono::duration<double>(ts_load - ts_begin).count();
   double t_transfrom = std::chrono::duration<double>(ts_transform - ts_load).count();
   double t_ingest = std::chrono::duration<double>(ts_ingest - ts_transform).count();
-  double t_algo = std::chrono::duration<double>(ts_algo - ts_ingest).count();
+  //double t_algo = std::chrono::duration<double>(ts_algo - ts_ingest).count();
 
   printf("Load time: %.4f\n", t_load);
   printf("Transform time: %.4f\n", t_transfrom);
   printf("Ingest time: %.4f\n", t_ingest);
-  printf("Algorithm time: %.4f\n", t_algo);
+  //printf("Algorithm time: %.4f\n", t_algo);
+
+  printf("BFS time: %.4f\n", t_bfs);
+  printf("PR time: %.4f\n", t_pr);
 
   double bw_ingest = num_edges / t_ingest / 1e6;
   printf("Ingest bandwidth: %.4fM Edges/s\n", bw_ingest);

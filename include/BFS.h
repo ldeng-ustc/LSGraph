@@ -192,7 +192,7 @@ struct BFS_TopDown_F {
   int32_t* levels;
   int32_t& cur_level;
   int64_t& frontier;
-  int32_t thread_frontier[1024];
+  int32_t thread_frontier[1024][16];  // max 1024 thread, cache line padding
 
   BFS_TopDown_F(int32_t* levels, int32_t& cur, int64_t& front) : levels(levels), cur_level(cur), frontier(front) {
     memset(thread_frontier, 0, sizeof(thread_frontier));
@@ -205,7 +205,7 @@ struct BFS_TopDown_F {
     if(levels[d] == 0) {
       levels[d] = cur_level + 1;
       // frontier++;
-      thread_frontier[getWorkerNum()] ++;
+      thread_frontier[getWorkerNum()][0] ++;
       return 1;
     }
     return 0;
@@ -224,8 +224,8 @@ struct BFS_TopDown_F {
 
   inline void reduction() {
     for (int i = 0; i < getWorkers(); i++) {
-      frontier += thread_frontier[i];
-      thread_frontier[i] = 0;
+      frontier += thread_frontier[i][0];
+      thread_frontier[i][0] = 0;
     }
   }
 };
