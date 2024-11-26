@@ -157,10 +157,10 @@ struct CC_Edge_Sample_F { // Map Dense
 
     inline bool update(uint32_t d, uint32_t s) {    // Link the r-th pair, k is init to 0
         if(k == r) {
-            if(s == 0 || d == 0) {
-                printf("%d -> %d\n", s, d);
-                exit(1);
-            }
+            // if(s == 0 || d == 0) {
+            //     printf("%d -> %d\n", s, d);
+            //     exit(1);
+            // }
             Link(s, d, comp);
             has_sample = true;
             return 1;

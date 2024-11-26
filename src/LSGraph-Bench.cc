@@ -198,11 +198,7 @@ double test_bfs(G& GA, commandLine& P, int trial) {
 	struct timeval start, end;
 	struct timezone tzp;
 
-  long src = P.getOptionLongValue("-src",-1);
-  if (src == -1) {
-    std::cout << "Please specify a source vertex to run the BFS from" << std::endl;
-    exit(0);
-  }
+  long src = P.getOptionLongValue("-src",1);
   std::cout << "Running BFS from source = " << src << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
@@ -222,7 +218,8 @@ void run_algorithm(commandLine& P) {
   auto ts_begin = std::chrono::high_resolution_clock::now();
 
   // Load file
-  pair_uint *edges = get_edges_from_binary64_file(filename.c_str(), false, &num_edges, &num_nodes);
+  // pair_uint *edges = get_edges_from_binary64_file(filename.c_str(), false, &num_edges, &num_nodes);
+  pair_uint *edges = get_edges_from_binary32_file(filename.c_str(), false, &num_edges, &num_nodes);
   auto ts_load = std::chrono::high_resolution_clock::now();
 
   // Create updates
