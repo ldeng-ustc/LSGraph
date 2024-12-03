@@ -63,18 +63,55 @@ struct LSGraphTwoWay {
 
     // 2. serial, every graph use all threads, no need to copy
     // Faster, use 2.
+
+    // auto& v = gout_.vertices[12];
+    // if(v.degree > 0 && v.neighbors[0] == 0) {
+    //   printf("(prev)Error: %d\n", v.degree);
+    //   printf("Batch: \n");
+    //   for (size_t i = 0; i < batch.size(); ++i) {
+    //     auto [s, d] = batch[i];
+    //     printf("%d\t%d\n", s, d);
+    //   }
+    //   exit(0);
+    // }
+    // printf("Add edge batch\n");
     gout_.add_edge_batch_sort(batch, batch.size(), nn);
+    // if(v.degree > 0 && v.neighbors[0] == 0) {
+    //   printf("Error: %d\n", v.degree);
+    //   printf("Batch: \n");
+    //   for (size_t i = 0; i < batch.size(); ++i) {
+    //     auto [s, d] = batch[i];
+    //     printf("%d\t%d\n", s, d);
+    //   }
+    //   exit(0);
+    // }
+
     // reverse batch
     parallel_for (size_t i = 0; i < batch.size(); ++i) {
       auto [s, d] = batch[i];
       batch[i] = {d, s};
     }
+
+
     gin_.add_edge_batch_sort(batch, batch.size(), nn);
+
+
+    // if(v.degree > 0 && v.neighbors[0] == 0) {
+    //   printf("Error: %d\n", v.degree);
+    //   printf("Batch: \n");
+    //   for (size_t i = 0; i < batch.size(); ++i) {
+    //     auto [s, d] = batch[i];
+    //     printf("%d\t%d\n", s, d);
+    //   }
+    //   exit(0);
+    // }
 
   }
 
   size_t get_num_vertices() {
-    return gin_.get_num_vertices();
+    auto n1 = gin_.get_num_vertices();
+    auto n2 = gout_.get_num_vertices();
+    return std::max(n1, n2);
   }
 
   LSGraph& in() {
@@ -194,11 +231,11 @@ double test_tc(G& GA, commandLine& P) {
 
 // return time elapsed
 template <class G>
-double test_bfs(G& GA, commandLine& P, int trial) {
+double test_bfs(G& GA, commandLine& P, long src) {
 	struct timeval start, end;
 	struct timezone tzp;
 
-  long src = P.getOptionLongValue("-src",1);
+  // long src = P.getOptionLongValue("-src",1);
   std::cout << "Running BFS from source = " << src << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
@@ -260,7 +297,11 @@ void run_algorithm(commandLine& P) {
   auto ts_ingest = std::chrono::high_resolution_clock::now();
 
   // Run test
-  double t_bfs = test_bfs(tgraph, P, 1);
+  double t_bfs = 0.0;
+  for(size_t i = 0; i < 20; i++) {
+    double t = test_bfs(tgraph, P, i);
+    t_bfs += t;
+  }
   double t_pr = test_pr(tgraph, P);
   double t_cc = test_cc(tgraph, P);
 

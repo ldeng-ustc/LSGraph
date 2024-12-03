@@ -233,6 +233,10 @@ class LSGraph {
     // 0. sort update
     sort_updates(updates, edge_count, nn);
 
+    // auto [s1, d1] = updates[0];
+    // printf("first: %d %d\n", s1, d1);
+
+
 		// 1. generate partitions array
     uint32_t part = edge_count / threads;
     // printf("part:  %d %d\n", part, sizeof (pnum));
@@ -317,6 +321,9 @@ class LSGraph {
 
       std::pair<uint32_t, uint32_t> range = {parts[i], parts[i+1]};
       uint32_t size = range.second - range.first;
+      // auto [s1, d1] = updates[range.first];
+      // int tid = getWorkerNum();
+      // printf("[%d] s: %d, d: %d\n", tid, s1, d1);
 
 #if ENABLE_LOCK
       lock(&vertices[s].degree);
@@ -407,6 +414,14 @@ class LSGraph {
       }
       auto final_degree = new_size;
 
+      // print edge_insert_array
+      // for (int j = 0; j < new_size; j++) {
+      //   printf("%d ", edge_insert_array[j]);
+      // }
+      // printf("\n");
+
+      // printf("s: %d, degree: %d, new_size: %d, final_degree: %d, NUM_IN_PLACE_NEIGHBORS: %d\n", s, degree, new_size, final_degree, NUM_IN_PLACE_NEIGHBORS);
+
       if (degree == 0) {
         // cacheline
         if (new_size <= NUM_IN_PLACE_NEIGHBORS) {
@@ -414,12 +429,16 @@ class LSGraph {
         } else { // HITree
           fl_container *container = new fl_container();
           vertices[s].aux_neighbors = container;
-          // std::pair<uint32_t, uint32_t>* init_data = new std::pair<uint32_t, uint32_t>[size];
-          // for (int j = 0; j < size; ++j) {
-          //   init_data[j].first = edge_insert_array[j];
-          //   init_data[j].second = edge_insert_array[j];
-          // }
-          container->bulk_load(edge_insert_array, new_size);
+          // // std::pair<uint32_t, uint32_t>* init_data = new std::pair<uint32_t, uint32_t>[size];
+          // // for (int j = 0; j < size; ++j) {
+          // //   init_data[j].first = edge_insert_array[j];
+          // //   init_data[j].second = edge_insert_array[j];
+          // // }
+          // container->bulk_load(edge_insert_array, new_size);
+          // // delete [] init_data;
+          memcpy(vertices[s].neighbors, edge_insert_array, NUM_IN_PLACE_NEIGHBORS * sizeof(vertex));
+          //HITree
+          container->bulk_load(edge_insert_array + NUM_IN_PLACE_NEIGHBORS, final_degree-NUM_IN_PLACE_NEIGHBORS);
           // delete [] init_data;
         }
         vertices[s].degree += new_size;
@@ -427,6 +446,7 @@ class LSGraph {
         memcpy(vertices[s].neighbors, edge_insert_array, final_degree * sizeof(vertex));
         vertices[s].degree = final_degree | LOCK_MASK;
       } else {
+        // printf("degree: %d, NUM_IN_PLACE_NEIGHBORS: %d\n", degree, NUM_IN_PLACE_NEIGHBORS);
         if (degree <= NUM_IN_PLACE_NEIGHBORS) {
           // load_bulk, old+update, merge
           fl_container *container = new fl_container();
@@ -445,6 +465,8 @@ class LSGraph {
         } else {
           fl_container *container = (fl_container*)(vertices[s].aux_neighbors);
           memcpy(vertices[s].neighbors, edge_insert_array, NUM_IN_PLACE_NEIGHBORS * sizeof(vertex)); 
+          // printf("s: %d, neighbors[0]: %d\n", s, vertices[s].neighbors[0]);
+
           // if (container == nullptr) {
           //   std::cout << "error container is null" << std::endl;
           // }
@@ -1088,6 +1110,10 @@ unlock:
     void LSGraph::map_dense_vs_all(F &f, VS &vs, VS &output_vs, uint32_t self_index, bool output) {
       uint32_t degree = vertices[self_index].degree;
       uint32_t local_idx = 0;
+      // if(self_index == 40410836){
+      //   printf("map_dense_vs_all\n");
+      //   printf("degree: %d\n", vertices[self_index].degree);
+      // }
       if (degree <= NUM_IN_PLACE_NEIGHBORS) {
         while (local_idx < degree) {
           auto v = vertices[self_index].neighbors[local_idx];
@@ -1109,6 +1135,11 @@ unlock:
 #endif
         while (local_idx < NUM_IN_PLACE_NEIGHBORS) {
           auto v = vertices[self_index].neighbors[local_idx];
+          if(v == 0){
+            printf("self_index: %d\n", self_index);
+            printf("v: %d\n", v);
+            exit(0);
+          }
           if (f.update(v, self_index) == 1) {
             if (output) {
               output_vs.insert_dense(self_index);

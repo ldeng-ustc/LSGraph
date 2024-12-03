@@ -50,7 +50,18 @@ struct PR_Pull_F {
         outgoing_contrib(_outgoing_contrib), incoming_total(_incoming_total) {}
 
     inline bool update(uint32_t s, uint32_t d) {
+        auto old_incoming = incoming_total;
         incoming_total += outgoing_contrib[s];
+        // if(isnanf(incoming_total) || isinff(incoming_total)) {
+        // if (d == 26743) {
+        //     printf("s: %d, d: %d ", s, d);
+        //     printf("old_incoming: %g, outgoing_contrib[s]: %g ", old_incoming, outgoing_contrib[s]);
+        //     printf("incoming_total: %g\n", incoming_total);
+        //     if(isnanf(incoming_total) || isinff(incoming_total)) {
+        //         printf("Error: %d\n", d);
+        //         exit(0);
+        //     }
+        // }
         return 1;
     }
 
@@ -69,15 +80,20 @@ T* PR_Pull_S(TGraph& G, int max_iters, double epsilon=0) {
 
     const ScoreT init_score = 1.0f / G.get_num_vertices();
     const ScoreT base_score = (1.0f - kDamp) / G.get_num_vertices();
+    printf("Init score: %.9f, Base score: %.9f\n", init_score, base_score);
 
     ScoreT* scores = newA(ScoreT, G.get_num_vertices());
     ScoreT* outgoing_contrib = newA(ScoreT, G.get_num_vertices());
+
+    parallel_for (NodeID n=0; n < G.get_num_vertices(); n++)
+        scores[n] = init_score;
 
     parallel_for (NodeID n=0; n < G.get_num_vertices(); n++)
         outgoing_contrib[n] = init_score / G.out().degree(n);
 
     for (int iter=0; iter < max_iters; iter++) {
         double error = 0;
+        auto st = std::chrono::high_resolution_clock::now();
 
         // manually map instead of using edgeMap, to avoid extra incoming_total array
         parallel_for(NodeID u=0; u < G.get_num_vertices(); u++) {
@@ -89,6 +105,10 @@ T* PR_Pull_S(TGraph& G, int max_iters, double epsilon=0) {
             error += fabs(scores[u] - old_score);
             outgoing_contrib[u] = scores[u] / G.out().degree(u);
         }
+
+        auto ed = std::chrono::high_resolution_clock::now();
+        double dur = std::chrono::duration<double>(ed - st).count();
+        printf("Iteration %d: error = %.9f, %.6f seconds\n", iter, error, dur);
 
         if (error < epsilon)
         break;
