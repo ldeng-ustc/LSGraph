@@ -1,4 +1,4 @@
-TARGETS= LSGraph LSGraph-Bench
+TARGETS= LSGraph LSGraph-Bench LSGraph-TC
 
 ifdef D
 	DEBUG=-g -DDEBUG_MODE
@@ -66,7 +66,7 @@ ifeq ($(OPENMP),1)
 endif
 
 LDFLAGS +="-Wl,-rpath,lib/"
-all: LSGraph LSGraph-Bench
+all: LSGraph LSGraph-Bench LSGraph-TC
 LSGraph:							$(OBJDIR)/LSGraph.o \
 												$(OBJDIR)/util.o
 # dependencies between .o files and .cc (or .c) files
@@ -77,7 +77,11 @@ $(OBJDIR)/LSGraph.o: 					$(LOC_SRC)/LSGraph.cc \
 
 LSGraph-Bench: $(OBJDIR)/LSGraph-Bench.o $(OBJDIR)/util.o
 
+LSGraph-TC: $(OBJDIR)/LSGraph-TC.o $(OBJDIR)/util.o
+
 $(OBJDIR)/LSGraph-Bench.o: $(LOC_SRC)/LSGraph-Bench.cc $(LOC_INCLUDE)/graph.h $(LOC_INCLUDE)/util.h
+
+$(OBJDIR)/LSGraph-TC.o: $(LOC_SRC)/LSGraph-TC.cc $(LOC_INCLUDE)/graph.h $(LOC_INCLUDE)/util.h
 
 
 #

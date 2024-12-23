@@ -1,5 +1,6 @@
 /LSGraph
 /LSGraph-Bench
+/LSGraph-TC
 
 /include/boost
 /include/parlay

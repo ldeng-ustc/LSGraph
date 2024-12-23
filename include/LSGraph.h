@@ -1135,11 +1135,11 @@ unlock:
 #endif
         while (local_idx < NUM_IN_PLACE_NEIGHBORS) {
           auto v = vertices[self_index].neighbors[local_idx];
-          if(v == 0){
-            printf("self_index: %d\n", self_index);
-            printf("v: %d\n", v);
-            exit(0);
-          }
+          // if(v == 0){
+          //   printf("self_index: %d\n", self_index);
+          //   printf("v: %d\n", v);
+          //   exit(0);
+          // }
           if (f.update(v, self_index) == 1) {
             if (output) {
               output_vs.insert_dense(self_index);

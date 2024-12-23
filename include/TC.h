@@ -35,13 +35,17 @@ long countCommon(Graph &G, uint32_t a, uint32_t b, std::vector<std::vector<uint3
     long ans=0;
     auto& nei_a = mp[a];
     auto& nei_b = mp[b];
-    uint32_t i = 0, j = 0, a_v = nei_a[0], b_v = nei_b[0], size_a = nei_a.size(), size_b = nei_b.size();
+    uint32_t i = 0, j = 0, size_a = nei_a.size(), size_b = nei_b.size();
+    if(size_a == 0 || size_b == 0) return 0;
+
+    uint32_t a_v = nei_a[i], b_v = nei_b[j];
     while (i < size_a && j < size_b && a_v < a && b_v < b) { //count "directed" triangles
     if (a_v == b_v) {
       ++i;;
       ++j;
       a_v = nei_a[i];
       b_v = nei_b[j];
+      // printf("a_v: %d, b_v: %d\n", a_v, b_v);
       ans++;
     }
     else if (a_v < b_v){
@@ -92,7 +96,5 @@ uint64_t TC(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
     count += counts[i*8];
   }
   return count;
-#if VERIFY
-	 printf("triangle count = %ld\n",count);
-#endif
+	printf("triangle count = %ld\n",count);
 }

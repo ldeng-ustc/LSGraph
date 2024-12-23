@@ -275,6 +275,10 @@ void run_algorithm(commandLine& P) {
       batch[j] = std::make_tuple(edges[i*batch_size+j].x, edges[i*batch_size+j].y);
     }
     batch_data.emplace_back(std::move(batch));
+
+    if(i % info_batch == 0) {
+      printf("Transform batch to Sequence %ld/%ld\n", i+1, batchs);
+    }
   }
   free(edges);
   auto ts_transform = std::chrono::high_resolution_clock::now();
