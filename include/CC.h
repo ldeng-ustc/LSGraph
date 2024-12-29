@@ -175,6 +175,28 @@ struct CC_Edge_Sample_F { // Map Dense
     }
 };
 
+struct CC_Edge_Sample_Once_F { // Map Dense
+    NodeID* comp;
+    // int& k;
+    int k;
+    int r;
+
+    CC_Edge_Sample_Once_F(NodeID* _comp, int _r) : comp(_comp), k(0), r(_r) {}
+
+    inline bool update(uint32_t d, uint32_t s) {    // Link the r-th pair, k is init to 0
+        // if(s < 100) {
+        //     printf("Linking %d and %d\n", s, d);
+        // }
+        Link(s, d, comp);
+        k ++;
+        return 1;
+    }
+
+    inline bool cond(uint32_t d) {  // after Link
+        return k < r;
+    }
+};
+
 template <class TGraph>
 struct CC_Vertex_Sample_F {
     TGraph& G;
@@ -192,6 +214,22 @@ struct CC_Vertex_Sample_F {
     }
 };
 
+template <class TGraph>
+struct CC_Vertex_Sample_Once_F {
+    TGraph& G;
+    NodeID* comp;
+    int round;
+
+    CC_Vertex_Sample_Once_F(TGraph& _G, NodeID* _comp, int _round) : G(_G), comp(_comp), round(_round) {}
+
+    inline bool operator() (NodeID i) {
+        // int k = 0;
+        // printf("Processing node %d\n", i);
+        CC_Edge_Sample_Once_F func(comp, round);
+        G.out().map_dense_vs_all(func, _placeholder, _placeholder, i, false);
+        return 1;
+    }
+};
 
 struct CC_Edge_Finalize_F { // Map Dense
     NodeID* comp;
@@ -276,13 +314,14 @@ NodeID* CC_GAPBS_S(TGraph &G, bool logging, size_t neighbor_rounds=2) {
 
     // Process a sparse sampled subgraph first for approximating components.
     // Sample by processing a fixed number of neighbors for each node (see paper)
-    for (int round = 0; round < neighbor_rounds; round++) {
-        vertexMap(all, CC_Vertex_Sample_F<TGraph>(G, comp, round), false);
-        // PrintComp(comp, 128);
-        vertexMap(all, CC_Vertex_Compress_F(comp), false);
-        // PrintComp(comp, 128);
-    }
-
+    // for (int round = 0; round < neighbor_rounds; round++) {
+    //     vertexMap(all, CC_Vertex_Sample_F<TGraph>(G, comp, round), false);
+    //     // PrintComp(comp, 128);
+    //     vertexMap(all, CC_Vertex_Compress_F(comp), false);
+    //     // PrintComp(comp, 128);
+    // }
+    vertexMap(all, CC_Vertex_Sample_Once_F<TGraph>(G, comp, neighbor_rounds), false);
+    vertexMap(all, CC_Vertex_Compress_F(comp), false);
 
 
     auto ts2 = std::chrono::high_resolution_clock::now();

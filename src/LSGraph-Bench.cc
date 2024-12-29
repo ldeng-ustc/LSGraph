@@ -171,14 +171,21 @@ double test_pr(G& GA, commandLine& P) {
 }
 
 template <class G>
-double test_cc(G& GA, commandLine& P) {
+double test_cc(G& GA, commandLine& P, size_t rounds=10) {
 	struct timeval start, end;
 	struct timezone tzp;
   std::cout << "Running CC" << std::endl;
   // with edge map
   gettimeofday(&start, &tzp);
   // auto cc_result = CC(GA);
-  auto cc_result = CC_GAPBS_S(GA, true, 2);
+
+  NodeID* cc_result;
+  for(size_t i=0; i<rounds; i++) {
+    cc_result = CC_GAPBS_S(GA, false, 2);
+    if(i != rounds - 1) {
+      free(cc_result);
+    }
+  }
   gettimeofday(&end, &tzp);
   PrintCompStats(cc_result, GA.get_num_vertices());
   free(cc_result);
@@ -307,7 +314,7 @@ void run_algorithm(commandLine& P) {
     t_bfs += t;
   }
   double t_pr = test_pr(tgraph, P);
-  double t_cc = test_cc(tgraph, P);
+  double t_cc = test_cc(tgraph, P, 10);
 
   double t_load = std::chrono::duration<double>(ts_load - ts_begin).count();
   double t_transfrom = std::chrono::duration<double>(ts_transform - ts_load).count();
