@@ -87,9 +87,9 @@ NodeID SampleFrequentElement(const NodeID* comp, NodeID v_count, bool logging=fa
         sample_counts.begin(), sample_counts.end(),
         [](const kvp_type& a, const kvp_type& b) { return a.second < b.second; });
     float frac_of_graph = static_cast<float>(most_frequent->second) / num_samples;
-    if(logging) {
+    // if(logging) {
         printf("Skipping largest intermediate component (ID: %d, approx. %.2f%% of the graph)\n", most_frequent->first, frac_of_graph * 100);
-    }
+    //}
     return most_frequent->first;
 }
 

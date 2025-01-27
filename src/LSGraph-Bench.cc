@@ -38,7 +38,28 @@ using namespace graphstore;
 #define LOGGING_TICK (1ULL << 24)
 #define BATCH_SIZE (1ULL << 9)
 
-#include	<stdlib.h>
+#include <stdlib.h>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <unistd.h>
+
+long get_rss() {
+    std::ifstream stat_file("/proc/self/stat");
+    std::string line;
+    std::getline(stat_file, line);
+    std::istringstream iss(line);
+    std::string token;
+
+    // 跳过前 23 个字段
+    for (int i = 0; i < 23; ++i) {
+        iss >> token;
+    }
+
+    // 读取第 24 个字段（RSS）
+    iss >> token;
+    return std::stol(token) * sysconf(_SC_PAGESIZE);
+}
 
 
 struct LSGraphTwoWay {
@@ -306,6 +327,7 @@ void run_algorithm(commandLine& P) {
     }
   }
   auto ts_ingest = std::chrono::high_resolution_clock::now();
+  long rss_ingest = get_rss();
 
   // Run test
   double t_bfs = 0.0;
@@ -313,6 +335,8 @@ void run_algorithm(commandLine& P) {
     double t = test_bfs(tgraph, P, i);
     t_bfs += t;
   }
+  long rss_bfs = get_rss();
+
   double t_pr = test_pr(tgraph, P);
   double t_cc = test_cc(tgraph, P, 10);
 
@@ -320,7 +344,7 @@ void run_algorithm(commandLine& P) {
   double t_transfrom = std::chrono::duration<double>(ts_transform - ts_load).count();
   double t_ingest = std::chrono::duration<double>(ts_ingest - ts_transform).count();
 
-  printf(EXPOUT "Datset: %s\n", filename.c_str());
+  printf(EXPOUT "Dataset: %s\n", filename.c_str());
   printf(EXPOUT "Vertex count: %d\n", num_nodes);
   printf(EXPOUT "Load: %.4f\n", t_load);
   printf("\tTransform time: %.4f\n", t_transfrom);
@@ -329,6 +353,9 @@ void run_algorithm(commandLine& P) {
   printf(EXPOUT "BFS: %.4f\n", t_bfs);
   printf(EXPOUT "PR: %.4f\n", t_pr);
   printf(EXPOUT "CC: %.4f\n", t_cc);
+
+  printf(EXPOUT "RSS_Ingest: %ld\n", rss_ingest);
+  printf(EXPOUT "RSS_BFS: %ld\n", rss_bfs);
 
   double bw_ingest = num_edges / t_ingest / 1e6;
   printf("Ingest bandwidth: %.4fM Edges/s\n", bw_ingest);

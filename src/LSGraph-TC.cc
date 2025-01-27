@@ -75,7 +75,7 @@ void run_algorithm(commandLine& P) {
 
   // Load file
   // pair_uint *edges = get_edges_from_binary64_file(filename.c_str(), false, &num_edges, &num_nodes);
-  pair_uint *edges = get_edges_from_binary32_file(filename.c_str(), false, &num_edges, &num_nodes);
+  pair_uint *edges = get_edges_from_binary32_file(filename.c_str(), true, &num_edges, &num_nodes);
   auto ts_load = std::chrono::high_resolution_clock::now();
 
   // Create updates
