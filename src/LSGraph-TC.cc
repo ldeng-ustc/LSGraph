@@ -58,7 +58,7 @@ double test_tc(G& GA, commandLine& P) {
   gettimeofday(&prepare, &tzp);
   printf("Prepare: %.2f\n", cal_time_elapsed(&start, &prepare));
 
-  auto count = TC(GA, mp);
+  auto count = TC_gabps(GA, mp);
   gettimeofday(&end, &tzp);
   printf("TC finished, counted %ld\n", count);
   return cal_time_elapsed(&start, &end);
