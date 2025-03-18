@@ -41,13 +41,9 @@ using namespace graphstore;
 #include	<stdlib.h>
 
 template <class G>
-double test_tc(G& GA, commandLine& P) {
-	struct timeval start, end, prepare;
-	struct timezone tzp;
-
-  std::cout << "Running TC" << std::endl;
-
-  // with edge map
+size_t run_tc(G& GA) {
+  struct timeval start, prepare;
+  struct timezone tzp;
   gettimeofday(&start, &tzp);
   std::vector<std::vector<uint32_t>>mp(GA.get_num_vertices());
   parallel_for(int i = 0; i < GA.get_num_vertices(); ++i){
@@ -59,6 +55,19 @@ double test_tc(G& GA, commandLine& P) {
   printf("Prepare: %.2f\n", cal_time_elapsed(&start, &prepare));
 
   auto count = TC_gabps(GA, mp);
+  return count;
+}
+
+template <class G>
+double test_tc(G& GA, commandLine& P) {
+	struct timeval start, end;
+	struct timezone tzp;
+
+  std::cout << "Running TC" << std::endl;
+
+  // with edge map
+  gettimeofday(&start, &tzp);
+  auto count = run_tc(GA);
   gettimeofday(&end, &tzp);
   printf("TC finished, counted %ld\n", count);
   return cal_time_elapsed(&start, &end);

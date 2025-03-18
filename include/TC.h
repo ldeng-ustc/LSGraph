@@ -101,22 +101,12 @@ uint64_t TC(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
 
 template <class Graph>
 uint64_t TC_gabps(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
-    for(size_t i = 0; i< 50; i++) {
-      printf("%d: ", i);
-      for(size_t j = 0; j < mp[i].size() && mp[i][j] < i; j++) {
-        printf("%d ", mp[i][j]);
-      }
-      printf("\n");
-    }
-
-
     uint32_t n = G.get_num_vertices();
-    std::vector<uint64_t> counts(getWorkers()*8, 0);
+    size_t total = 0;
 
     using NodeID = uint32_t;
 
-    // parallel_for (NodeID u=0; u < n; u++) {
-    # pragma omp parallel for
+    # pragma omp parallel for reduction(+:total) schedule(dynamic, 64)
     for (NodeID u = 0; u < n; u++) {
         uint32_t worker_id = getWorkerNum();
         for (NodeID v : mp[u]) {
@@ -135,17 +125,12 @@ uint64_t TC_gabps(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
                     break;
                 }
                 if (w == *it) {
-                    counts[worker_id*8] += 1;
+                    total++;
                 }
             }
         }
     }
 
-    uint64_t count = 0;
-    for (int i = 0; i < getWorkers(); i++) {
-        count += counts[i*8];
-    }
-
-    printf("triangle count = %ld\n",count);
-    return count;
+    printf("triangle count = %ld\n",total);
+    return total;
 }
