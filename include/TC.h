@@ -106,9 +106,18 @@ uint64_t TC_gabps(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
 
     using NodeID = uint32_t;
 
-    # pragma omp parallel for reduction(+:total) schedule(dynamic, 64)
-    for (NodeID u = 0; u < n; u++) {
-        uint32_t worker_id = getWorkerNum();
+    // # pragma omp parallel for schedule(dynamic, 64)
+    // for (NodeID u = 0; u < n; u++) {
+    //     // erase neighbors that are larger than u (mp[u] is sorted)
+    //     mp[u].erase(std::lower_bound(mp[u].begin(), mp[u].end(), u), mp[u].end());
+    // }
+
+    std::vector<uint64_t> counts(getWorkers()*8, 0);
+
+    // # pragma omp parallel for reduction(+:total) // schedule(dynamic, 64)
+    // for (NodeID u = 0; u < n; u++) {
+    parallel_for(NodeID u = 0; u < n; u++) {
+      uint32_t worker_id = getWorkerNum();
         for (NodeID v : mp[u]) {
             if(v >= u) {
                 break;
@@ -125,10 +134,15 @@ uint64_t TC_gabps(Graph& G, std::vector<std::vector<uint32_t>>&mp) {
                     break;
                 }
                 if (w == *it) {
-                    total++;
+                    // total++;
+                    counts[worker_id*8] += 1;
                 }
             }
         }
+    }
+
+    for(int i = 0; i < getWorkers(); i++) {
+        total += counts[i*8];
     }
 
     printf("triangle count = %ld\n",total);

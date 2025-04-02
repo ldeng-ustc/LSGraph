@@ -640,6 +640,62 @@ public:
     }
   }
 
+  
+  void print_hitree_l(std::vector<uint32_t>&nei, uint32_t node_id, int level = 0) {
+    auto keys_ = reinterpret_cast<KT *>(entries_);
+    auto grain_kt = GRAIN / sizeof(KT);
+    if (model_ != nullptr) {
+      TNode<KT, VT>* child_ptr = nullptr;
+      for (auto i = 0; i < capacity_; ++i) {
+        auto type = entry_type(i);
+        if (type == Edge) {
+          if(keys_[i] >= node_id){
+            return;
+          }
+          nei.push_back(keys_[i]);
+        } else if (type == Block) {
+          auto bsize = keys_[i];
+          for (auto j = 0; j < bsize; ++j) {
+            if(keys_[i+j+1] >= node_id){
+              return;
+            }
+            nei.push_back(keys_[i+j+1]);
+          }
+          i += (GRAIN / sizeof(KT) - 1);
+        } else if (type == HTNode && entries_[i>>1].child_ != nullptr) {
+          if (child_ptr == entries_[i>>1].child_) {
+          i += (GRAIN / sizeof(KT) - 1);
+          continue;
+        }
+        child_ptr = entries_[i>>1].child_;
+         entries_[i>>1].child_->print_hitree_l(nei, node_id, level + 1);
+          i += (GRAIN / sizeof(KT) - 1);
+        } else {
+          continue;
+        }
+      }
+    } else {
+      if (index_num_ == 0) {
+        for(auto i = 0 ; i < size_; i++){
+          if(keys_[i] >= node_id){
+            return;
+          }
+          nei.push_back(keys_[i]);
+        }
+      } else {
+        uint32_t block_num = keys_[0];
+        for (auto i = 0; i < block_num; ++i) {
+          for (auto j = 0; j < keys_[grain_kt*(i+index_num_)]; j++) {
+            if(keys_[grain_kt*(i+index_num_) + j + 1] >= node_id){
+              return;
+            }
+            nei.push_back(keys_[grain_kt*(i+index_num_) + j + 1]);
+          }
+        }
+      }
+    }
+  }
+
 
   bool update(KVT kv) {
     if (model_ != nullptr) {

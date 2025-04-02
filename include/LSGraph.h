@@ -76,6 +76,7 @@ class LSGraph {
       uint64_t collect_conflict(const vertex s);
       
       void print(const vertex s, std::vector<uint32_t>& nei);
+      void print_l(const vertex s, std::vector<uint32_t>& nei, uint32_t node_id);
       // get out neighbors of vertex s
       // NeighborIterator neighbors(const vertex v) const;
       // get out degree of vertex v
@@ -871,6 +872,21 @@ class LSGraph {
     if (vertices[s].degree > NUM_IN_PLACE_NEIGHBORS) {
       // ((fl_container*)(vertices[s].aux_neighbors))->print_stats();
       ((fl_container*)(vertices[s].aux_neighbors))->print_hitree(nei);
+    }
+  }
+
+  void LSGraph::print_l(const vertex s, std::vector<uint32_t>& nei, uint32_t node_id) {
+    //std::cout<<"degree:"<<vertices[s].degree<<std::endl;
+    for (uint32_t i = 0; i < vertices[s].degree && i < NUM_IN_PLACE_NEIGHBORS;
+          i++) {
+      if(vertices[s].neighbors[i] >= node_id) {
+        return;
+      }
+      nei.push_back(vertices[s].neighbors[i]);
+    }
+    if (vertices[s].degree > NUM_IN_PLACE_NEIGHBORS) {
+      // ((fl_container*)(vertices[s].aux_neighbors))->print_stats();
+      ((fl_container*)(vertices[s].aux_neighbors))->print_hitree_l(nei, node_id);
     }
   }
 

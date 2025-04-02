@@ -59,6 +59,10 @@ public:
     root_->print_hitree(nei);
   }
 
+  void print_hitree_l(std::vector<uint32_t>&nei, uint32_t node_id) {
+    root_->print_hitree_l(nei, node_id);
+  }
+
   KT get_first_key() {
     return root_->get_first_key();
   }
