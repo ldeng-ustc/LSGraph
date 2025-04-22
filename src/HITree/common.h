@@ -5,7 +5,7 @@
 #define unlikely(x) __builtin_expect((x),0)
 
 #include <algorithm>
-#include <boost/optional.hpp>
+// #include <boost/optional.hpp>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
