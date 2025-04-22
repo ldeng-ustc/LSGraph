@@ -20,9 +20,20 @@ ifdef P
 endif
 
 # sudo apt install libstdc++-8-dev
-CXX = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
-CC = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang -std=gnu11
-LD= /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
+# CXX = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
+# CC = /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang -std=gnu11
+# LD= /home/ldeng/open-source/OpenCilk_v1.0/OpenCilk-10.0.1-Linux/bin/clang++ -std=c++17
+
+ifndef CILK_HOME
+$(warning CILK_HOME is not defined, using current directory.)
+$(info To set CILK_HOME, run: make CILK_HOME=/path/to/OpenCilk)
+$(info Make sure $(CILK_HOME)/bin/clang++ is valid, and OpenCilk has correct version (v1.0).)
+CILK_HOME=./
+endif
+
+CXX = $(CILK_HOME)/bin/clang++ -std=c++17
+CC = $(CILK_HOME)/bin/clang -std=gnu11
+LD = $(CILK_HOME)/bin/clang++ -std=c++17
 
 # 严重的，涉及多个文件的头文件名不一致，无法使用
 # CXX = /home/ldeng/open-source/OpenCilk/build/bin/clang++ -std=c++17
