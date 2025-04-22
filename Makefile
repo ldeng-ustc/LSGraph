@@ -57,7 +57,8 @@ CXXFLAGS += -Wno-constant-conversion
 CFLAGS += -mcx16  $(DEBUG) $(PROFILE) $(OPT) $(ARCH) -DOPENMP=$(OPENMP) -DCILK=$(CILK) -DPARLAY_OPENCILK -m64 -I. -I$(LOC_INCLUDE)
 CFLAGS += -fopenmp=libomp
 
-LDFLAGS += $(DEBUG) $(PROFILE) $(OPT) -L$(LOC_LIB) -lm -lpthread -lssl -lcrypto -ldl -lomp5
+# LDFLAGS += $(DEBUG) $(PROFILE) $(OPT) -L$(LOC_LIB) -lm -lpthread -lssl -lcrypto -ldl -lomp5
+LDFLAGS += $(DEBUG) $(PROFILE) $(OPT) -L$(LOC_LIB) -lm -lpthread -ldl
 # LDFLAGS += -L /usr/lib/llvm-10/lib/libomp.so
 
 OPENMP?=0
