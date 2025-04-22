@@ -4,6 +4,5 @@
 /LSGraph-Ingestion
 
 /include/boost
-/include/parlay
 
 /obj/*
